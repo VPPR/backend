@@ -14,7 +14,7 @@ hash_helper = CryptContext(schemes=["bcrypt"])
 
 @router.post("/login")
 async def admin_login(admin: HTTPBasicCredentials = Body(...)):
-    if validate_login(admin):
+    if await validate_login(admin):
         return {
             "email": admin.username,
             "access_token": signJWT(admin.username)
