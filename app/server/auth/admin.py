@@ -8,7 +8,7 @@ security = HTTPBasic()
 hash_helper = CryptContext(schemes=["bcrypt"])
 
 async def validate_login(credentials: HTTPBasicCredentials = Depends(security)):
-    admin =await admin_collection.find_one({"email": credentials.username})
+    admin = await admin_collection.find_one({"email": credentials.username})
     if admin:
         password = hash_helper.verify(credentials.password, admin['password'])
         if not password:
