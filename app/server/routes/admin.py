@@ -5,8 +5,8 @@ from passlib.context import CryptContext
 
 from app.server.auth.admin import validate_login
 from app.server.auth.jwt_handler import signJWT
-from app.server.database.database import add_admin
-from app.server.models.admin import AdminModel
+from app.server.database.database import add_admin, delete_admin
+from app.server.models.admin import *
 from app.server.database.database import admin_collection
 
 router = APIRouter()
@@ -36,4 +36,19 @@ async def admin_signup(admin: AdminModel = Body(...)):
         )
     else:
         return new_admin
-    
+
+@router.post('/delete')
+async def admin_delete(admin: HTTPBasicCredentials = Body(...)):
+    if await validate_login(admin):
+        deleted_admin = await delete_admin(admin.username)
+        print(deleted_admin)
+        return ResponseModel(
+            deleted_admin,
+            'admin {} deleted successfully'.format(deleted_admin.get('fullname'))
+        )
+    else:
+        return ErrorResponseModel(
+            'an error occured',
+            404,
+            'invalid credentials'
+        )
