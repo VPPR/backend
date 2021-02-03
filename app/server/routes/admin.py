@@ -20,7 +20,10 @@ async def admin_login(admin: HTTPBasicCredentials = Body(...)):
             "email": admin.username,
             "access_token": signJWT(admin.username)
         }
-    return "Invalid Login Details!"
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="invalid credentials"
+    )
 
 @router.post("/signup")
 async def admin_signup(admin: AdminModel = Body(...)):
