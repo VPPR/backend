@@ -22,7 +22,7 @@ async def admin_login(admin: HTTPBasicCredentials = Body(...)):
         }
     return "Invalid Login Details!"
 
-@router.post("/")
+@router.post("/signup")
 async def admin_signup(admin: AdminModel = Body(...)):
     # retrive the first record that matches with the email in request
     # if no records found, create new user
