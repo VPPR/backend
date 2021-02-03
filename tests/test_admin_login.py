@@ -6,6 +6,6 @@ from app.server.routes.admin import router as admin_router
 client = TestClient(admin_router)
 
 def test_admin_login():
-    response = client.post("/login",json={"username":"vigneshiyer666666@gmail.com", 
-    "password":"India@70"}, headers = {"accept":"application/json", "Content-type":"application/json"})
+    response = client.post("/login",json={"username":"test1@yahoomail.com", 
+    "password":"KillCOVID"}, headers = {"accept":"application/json", "Content-type":"application/json"})
     assert response.status_code == 200
