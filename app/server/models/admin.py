@@ -15,7 +15,7 @@ class AdminModel(BaseModel):
             }
         }
 
-def ResponseModel(data, message):
+def ResponseModel(data: dict, message: str):
     return {
         "data": [
             data
@@ -25,7 +25,7 @@ def ResponseModel(data, message):
     }
 
 
-def ErrorResponseModel(error, code, message):
+def ErrorResponseModel(error: str, code: int, message: str):
     return {
         "error": error,
         "code": code,
