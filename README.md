@@ -1,2 +1,5 @@
-# backend
-This is the back. Sure.
+## backend Usage
+
+`$ pip install -r requirements.txt`
+
+`$ python -m app`
