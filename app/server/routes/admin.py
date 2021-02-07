@@ -44,14 +44,9 @@ async def admin_signup(admin: AdminModel = Body(...)):
 async def admin_delete(admin: HTTPBasicCredentials = Body(...)):
     if await validate_login(admin):
         deleted_admin = await delete_admin(admin.username)
-        print(deleted_admin)
-        return ResponseModel(
-            deleted_admin,
-            'admin {} deleted successfully'.format(deleted_admin.get('fullname'))
-        )
+        return deleted_admin
     else:
-        return ErrorResponseModel(
-            'an error occured',
-            404,
-            'invalid credentials'
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid credentials"
         )
