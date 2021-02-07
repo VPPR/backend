@@ -1,11 +1,13 @@
+from fastapi.params import Depends
+from app.server.auth.jwt_bearer import JWTBearer
 from fastapi import Body, APIRouter, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import HTTPBasicCredentials
 from passlib.context import CryptContext
 
-from app.server.auth.admin import validate_login
-from app.server.auth.jwt_handler import signJWT
-from app.server.database.database import add_admin, delete_admin
+from app.server.auth.admin import validate_admin_jwt, validate_login
+from app.server.auth.jwt_handler import decodeJWT, signJWT
+from app.server.database.database import add_admin, delete_admin, get_admin
 from app.server.models.admin import *
 from app.server.database.database import admin_collection
 
@@ -40,10 +42,21 @@ async def admin_signup(admin: AdminModel = Body(...)):
     else:
         return new_admin
 
-@router.post('/delete')
-async def admin_delete(admin: HTTPBasicCredentials = Body(...)):
+@router.post('/delete/me')
+async def admin_delete_self(admin: HTTPBasicCredentials = Body(...)):
     if await validate_login(admin):
         deleted_admin = await delete_admin(admin.username)
+        return deleted_admin
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid credentials"
+        )
+
+@router.post('/delete')
+async def admin_delete( this_admin:dict = Depends(JWTBearer()),admin_id:str=Body(...)):
+    if await validate_admin_jwt(decodeJWT(this_admin)):
+        deleted_admin =await delete_admin(admin_id)
         return deleted_admin
     else:
         raise HTTPException(

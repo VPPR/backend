@@ -28,6 +28,10 @@ async def add_admin(admin_data: dict) -> Optional[dict]:
         return admin_helper(new_admin)
     return None
 
+async def get_admin(email: str) -> Optional[dict]:
+    admin = await admin_collection.find_one({"email":email})
+    return admin
+
 async def delete_admin(email: str) -> Optional[dict]:
     admin = await admin_collection.find_one({'email':email})
     if admin:
