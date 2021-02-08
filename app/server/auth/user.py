@@ -22,7 +22,7 @@ async def validate_login(credentials: HTTPBasicCredentials = Depends(security)) 
     return False
 
 async def validate_user_jwt(user: dict = Depends(decodeJWT(JWTBearer()))) -> bool:
-    user = await user_collection.find_one({'email' : user['user_id']})
+    user = await user_collection.find_one({'email' : user['email']})
     if user:
         return True
     return False

@@ -11,7 +11,6 @@ from app.server.database.database import add_user, delete_user, get_user
 from app.server.models.user import UserModel
 
 router = APIRouter()
-auth_router = APIRouter()
 
 hash_helper = CryptContext(schemes=['bcrypt'])
 
@@ -19,12 +18,7 @@ hash_helper = CryptContext(schemes=['bcrypt'])
 async def user_login(user: HTTPBasicCredentials = Body(...)):
     if await validate_login(user):
         user = await get_user(user.username)
-        print(user)
-        return {
-            'email': user.get('email'),
-            'is_admin' : user.get('is_admin'),
-            'access_token': signJWT(user.get('email'))
-        }
+        return signJWT(user.get('email'))
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail='invalid credentials'
@@ -45,7 +39,7 @@ async def user_signup(user: UserModel = Body(...)):
     else:
         return user
 
-@auth_router.post('/delete/self')
+@router.post('/delete/self')
 async def user_delete_self(user: HTTPBasicCredentials = Body(...)):
     if await validate_login(user):
         deleted_user = await delete_user(user.username)
@@ -57,12 +51,36 @@ async def user_delete_self(user: HTTPBasicCredentials = Body(...)):
             detail='invalid credentials'
         )
 
-@auth_router.post('/delete')
-async def user_delete(admin : dict = Depends(JWTBearer()), user_id: str = Body(...)):
-    if await validate_user_jwt(decodeJWT(admin)):
-        deleted_user =await delete_user(user_id)
-        print(delete_user)
-        return deleted_user
+@router.post('/delete')
+async def user_delete(admin : JWTBearer = Depends(JWTBearer()), email: str = Body(...)):
+    # here I'm writing user as admin because only admin will use this path
+    # check if user is authenticated
+    # then check if user is admin
+    # then check if email that is to be deleted exsts, if not, return 404
+    # then check if that email to be deleted belongs to admin type user, if it does, then retun 401
+    # then delete the user with given email id and return his details
+    admin = decodeJWT(admin)
+    if await validate_user_jwt(admin):
+        admin = await get_user(admin.get('email'))
+        if admin.get('is_admin'):
+            user = await get_user(email)
+            if user == None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail='user does not exists'
+                )
+            if user.get('is_admin'):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail='cannot delete admin'
+                )
+            deleted_user = await delete_user(email)
+            return deleted_user
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='you need to be admin to perform this operation'
+            )
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

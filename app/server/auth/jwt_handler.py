@@ -13,10 +13,10 @@ def token_response(token: str, expiry : time):
 
 JWT_SECRET = config('secret')
 
-def signJWT(user_id: str) -> Dict[str, str]:
+def signJWT(email: str) -> Dict[str, str]:
     # Set the expiry time.
     payload = {
-        'user_id': user_id,
+        'email': email,
         'expires': time.time() + 2400
     }
     return token_response(jwt.encode(payload, JWT_SECRET, algorithm="HS256"),payload['expires'])

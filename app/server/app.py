@@ -2,7 +2,6 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .auth.jwt_bearer import JWTBearer
 from .routes.user import router as UserRouter
-from .routes.user import auth_router as AuthUserRouter
 
 app = FastAPI()
 
@@ -30,17 +29,7 @@ async def read_root():
 app.include_router(
     UserRouter,
     tags=[
-        'User login and signup'
+        'User'
     ],
     prefix='/user'
-)
-app.include_router(
-    AuthUserRouter,
-    tags=[
-        'User delete'
-    ],
-    prefix='/user',
-    dependencies=[
-        Depends(token_listener)
-    ]
 )
