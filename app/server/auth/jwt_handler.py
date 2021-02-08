@@ -5,9 +5,11 @@ import jwt
 from decouple import config
 
 
-def token_response(token: str):
+def token_response(token: str, expiry : time):
     return {
-        "access_token": token
+        "access_token": token,
+        "expiry": time.strftime("%m/%d/%Y, %H:%M:%S",time.localtime(expiry))
+
     }
 
 JWT_SECRET = config('secret')
@@ -19,7 +21,7 @@ def signJWT(user_id: str) -> Dict[str, str]:
         'user_id': user_id,
         'expires': time.time() + 2400
     }
-    return token_response(jwt.encode(payload, JWT_SECRET, algorithm="HS256"))
+    return token_response(jwt.encode(payload, JWT_SECRET, algorithm="HS256"),payload['expires'])
 
 
 def decodeJWT(token: str) -> dict:

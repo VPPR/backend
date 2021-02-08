@@ -1,12 +1,14 @@
+from fastapi.params import Depends
+from app.server.auth.jwt_bearer import JWTBearer
 from fastapi import Body, APIRouter, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import HTTPBasicCredentials
 from passlib.context import CryptContext
 
-from app.server.auth.admin import validate_login
-from app.server.auth.jwt_handler import signJWT
-from app.server.database.database import add_admin
-from app.server.models.admin import AdminModel
+from app.server.auth.admin import validate_admin_jwt, validate_login
+from app.server.auth.jwt_handler import decodeJWT, signJWT
+from app.server.database.database import add_admin, delete_admin, get_admin
+from app.server.models.admin import *
 from app.server.database.database import admin_collection
 
 router = APIRouter()
@@ -20,20 +22,44 @@ async def admin_login(admin: HTTPBasicCredentials = Body(...)):
             "email": admin.username,
             "access_token": signJWT(admin.username)
         }
-    return "Invalid Login Details!"
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="invalid credentials"
+    )
 
-@router.post("/")
+@router.post("/signup")
 async def admin_signup(admin: AdminModel = Body(...)):
     # retrive the first record that matches with the email in request
     # if no records found, create new user
     # otherwise raise 409 error
-    old_admin = await admin_collection.find_one({'email': admin.email})
-    if old_admin == None:
-        admin.password = hash_helper.encrypt(admin.password)
-        new_admin = await add_admin(jsonable_encoder(admin))
-        return new_admin
-    else:
+    admin.password = hash_helper.encrypt(admin.password)
+    new_admin = await add_admin(jsonable_encoder(admin))
+    if new_admin == None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists"
+        )
+    else:
+        return new_admin
+
+@router.post('/delete/me')
+async def admin_delete_self(admin: HTTPBasicCredentials = Body(...)):
+    if await validate_login(admin):
+        deleted_admin = await delete_admin(admin.username)
+        return deleted_admin
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid credentials"
+        )
+
+@router.post('/delete')
+async def admin_delete( this_admin:dict = Depends(JWTBearer()),admin_id:str=Body(...)):
+    if await validate_admin_jwt(decodeJWT(this_admin)):
+        deleted_admin =await delete_admin(admin_id)
+        return deleted_admin
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid credentials"
         )
