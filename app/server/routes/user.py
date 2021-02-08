@@ -45,9 +45,10 @@ async def user_delete(user : JWTBearer = Depends(JWTBearer())):
     return await get_user(user.get('email'))
 
 @router.post('/delete/self')
-async def user_delete_self(user: HTTPBasicCredentials = Body(...)):
-    if await validate_login(user):
-        deleted_user = await delete_user(user.username)
+async def user_delete_self(user : JWTBearer = Depends(JWTBearer())):
+    user = decodeJWT(user)
+    if await validate_user_jwt(user):
+        deleted_user = await delete_user(user.get('email'))
         print(delete_user)
         return deleted_user
     else:
