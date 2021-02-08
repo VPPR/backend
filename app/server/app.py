@@ -7,7 +7,7 @@ from .routes.admin import router as AdminRouter
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000"
+    "*"
 ]
 
 app.add_middleware(
