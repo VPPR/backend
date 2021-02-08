@@ -39,6 +39,11 @@ async def user_signup(user: UserModel = Body(...)):
     else:
         return user
 
+@router.post('/details')
+async def user_delete(user : JWTBearer = Depends(JWTBearer())):
+    user = decodeJWT(user)
+    return await get_user(user.get('email'))
+
 @router.post('/delete/self')
 async def user_delete_self(user: HTTPBasicCredentials = Body(...)):
     if await validate_login(user):
