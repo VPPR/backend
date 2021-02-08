@@ -2,27 +2,45 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .auth.jwt_bearer import JWTBearer
 from .routes.user import router as UserRouter
-from .routes.admin import router as AdminRouter
+from .routes.user import auth_router as AuthUserRouter
 
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000"
+    'http://localhost:3000'
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 token_listener = JWTBearer()
 
-@app.get("/",tags=["Root"])
+@app.get('/',tags=['Root'])
 async def read_root():
-    return {"message":"Reliability issues = bugres"}
+    return {'message':'Reliability issues = bugres'}
 
-app.include_router(AdminRouter, tags=["Administrator"],prefix="/admin")
-app.include_router(UserRouter, tags=["Users"],prefix="/user",dependencies=[Depends(token_listener)])
+# app.include_router(AdminRouter, tags=['Administrator'],prefix='/admin')
+# app.include_router(UserRouter, tags=['Users'],prefix='/user',dependencies=[Depends(token_listener)])
+
+app.include_router(
+    UserRouter,
+    tags=[
+        'User login and signup'
+    ],
+    prefix='/user'
+)
+app.include_router(
+    AuthUserRouter,
+    tags=[
+        'User delete'
+    ],
+    prefix='/user',
+    dependencies=[
+        Depends(token_listener)
+    ]
+)
