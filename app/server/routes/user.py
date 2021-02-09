@@ -1,48 +1,94 @@
-from fastapi import APIRouter, Body
+from fastapi.params import Depends
+from app.server.auth.jwt_bearer import JWTBearer
+from fastapi import Body, APIRouter, HTTPException, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.security import HTTPBasicCredentials
+from passlib.context import CryptContext
 
-from app.server.database.database import *
-from app.server.models.user import *
+from app.server.auth.user import validate_user_jwt, validate_login
+from app.server.auth.jwt_handler import decodeJWT, signJWT
+from app.server.database.database import add_user, delete_user, get_user
+from app.server.models.user import UserModel
 
 router = APIRouter()
 
+hash_helper = CryptContext(schemes=['bcrypt'])
 
-@router.get("/", response_description="users retrieved")
-async def get_users():
-    users = await retrieve_users()
-    return ResponseModel(users, "users data retrieved successfully") \
-        if len(users) > 0 \
-        else ResponseModel(
-        users, "Empty list returned")
+@router.post('/login')
+async def user_login(user: HTTPBasicCredentials = Body(...)):
+    if await validate_login(user):
+        user = await get_user(user.username)
+        return signJWT(user.get('email'))
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='invalid credentials'
+    )
 
+@router.post('/signup')
+async def user_signup(user: UserModel = Body(...)):
+    # retrive the first record that matches with the email in request
+    # if no records found, create new user
+    # otherwise raise 409 error
+    user.password = hash_helper.encrypt(user.password)
+    user = await add_user(jsonable_encoder(user))
+    if user == None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='User with this email already exists'
+        )
+    else:
+        return user
 
-@router.get("/{id}", response_description="user data retrieved")
-async def get_user_data(id):
-    user = await retrieve_user(id)
-    return ResponseModel(user, "user data retrieved successfully") \
-        if user \
-        else ErrorResponseModel("An error occured.", 404, "user doesn'exist.")
+@router.post('/details')
+async def user_delete(user : JWTBearer = Depends(JWTBearer())):
+    user = decodeJWT(user)
+    return await get_user(user.get('email'))
 
+@router.post('/delete/self')
+async def user_delete_self(user : JWTBearer = Depends(JWTBearer())):
+    user = decodeJWT(user)
+    if await validate_user_jwt(user):
+        deleted_user = await delete_user(user.get('email'))
+        print(delete_user)
+        return deleted_user
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='invalid credentials'
+        )
 
-@router.post("/", response_description="user data added into the database")
-async def add_user_data(user: UserModel = Body(...)):
-    user = jsonable_encoder(user)
-    new_user = await add_user(user)
-    return ResponseModel(new_user, "user added successfully.")
-
-
-@router.delete("/{id}", response_description="user data deleted from the database")
-async def delete_user_data(id: str):
-    deleted_user = await delete_user(id)
-    return ResponseModel("user with ID: {} removed".format(id), "user deleted successfully") \
-        if deleted_user \
-        else ErrorResponseModel("An error occured", 404, "user with id {0} doesn't exist".format(id))
-
-
-@router.put("{id}")
-async def update_user(id: str, req: UpdateUserModel = Body(...)):
-    updated_user = await update_user_data(id, req.dict())
-    return ResponseModel("user with ID: {} name update is successful".format(id),
-                         "user name updated successfully") \
-        if updated_user \
-        else ErrorResponseModel("An error occurred", 404, "There was an error updating the user.".format(id))
+@router.post('/delete')
+async def user_delete(admin : JWTBearer = Depends(JWTBearer()), email: str = Body(...)):
+    # here I'm writing user as admin because only admin will use this path
+    # check if user is authenticated
+    # then check if user is admin
+    # then check if email that is to be deleted exsts, if not, return 404
+    # then check if that email to be deleted belongs to admin type user, if it does, then retun 401
+    # then delete the user with given email id and return his details
+    admin = decodeJWT(admin)
+    if await validate_user_jwt(admin):
+        admin = await get_user(admin.get('email'))
+        if admin.get('is_admin'):
+            user = await get_user(email)
+            if user == None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail='user does not exists'
+                )
+            if user.get('is_admin'):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail='cannot delete admin'
+                )
+            deleted_user = await delete_user(email)
+            return deleted_user
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='you need to be admin to perform this operation'
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='invalid credentials'
+        )
