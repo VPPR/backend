@@ -47,7 +47,7 @@ async def retrieve_users(is_admin: bool = False) -> Dict:
     # return list of admins or normal users
     users = []
     async for user in user_collection.find():
-        if user.is_admin == user.is_admin: 
+        if user.is_admin == is_admin: 
            users.append( user_helper(user))
     return users
 
