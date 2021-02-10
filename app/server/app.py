@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .auth.jwt_bearer import JWTBearer
 from .routes.user import router as UserRouter
+from .routes.zip import router as ZipRouter
 
 app = FastAPI()
 
@@ -30,6 +31,14 @@ app.include_router(
     UserRouter,
     tags=[
         'User'
+    ],
+    prefix='/user'
+)
+
+app.include_router(
+    ZipRouter,
+    tags=[
+        'Zip'
     ],
     prefix='/user'
 )
