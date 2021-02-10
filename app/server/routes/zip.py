@@ -1,14 +1,11 @@
 from fastapi.params import Depends
 from app.server.auth.jwt_bearer import JWTBearer
-from fastapi import Body, APIRouter, HTTPException, status, File, UploadFile
-from fastapi.encoders import jsonable_encoder
-from fastapi.security import HTTPBasicCredentials
+from fastapi import APIRouter, HTTPException, status, File, UploadFile
 from passlib.context import CryptContext
 
-from app.server.auth.user import validate_user_jwt, validate_login
-from app.server.auth.jwt_handler import decodeJWT, signJWT
-from app.server.database.database import add_user, delete_user, get_user
-from app.server.models.user import UserModel
+from app.server.auth.user import validate_user_jwt
+from app.server.auth.jwt_handler import decodeJWT
+from app.server.database.database import get_user
 
 router = APIRouter()
 
@@ -20,16 +17,6 @@ import io
 
 filepath = '/home/prk/Downloads/Telegram Desktop/6009142927_1612802713907 (1).zip'
 passwd = 'bATIPGnD'
-
-# zipfile = ZipFile(file=filepath)
-
-# for i in zipfile.namelist():
-#     folder, filename = i.split('/')
-#     if filename:
-#         fileobj = zipfile.read(name=folder+'/'+filename, pwd=bytes(passwd, encoding='UTF-8'))
-#         file = pd.read_csv(io.BytesIO(fileobj))
-#         # print(file.head())
-        # print(file.info())
 
 @router.post('/upload_zip')
 async def upload_zip(
