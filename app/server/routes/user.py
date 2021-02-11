@@ -14,7 +14,9 @@ router = APIRouter()
 
 hash_helper = CryptContext(schemes=['bcrypt'])
 
-@router.post('/login')
+@router.post('/login', name="Login",
+    description='''Route for user login. 
+        Accepts username and password and returns JWT Token and Expiry time''')
 async def user_login(user: HTTPBasicCredentials = Body(...)):
     if await validate_login(user):
         user = await get_user(user.username)
@@ -24,7 +26,10 @@ async def user_login(user: HTTPBasicCredentials = Body(...)):
         detail='invalid credentials'
     )
 
-@router.post('/signup')
+@router.post('/signup',name="Signup",
+    description='''Route for user registration. 
+        Accepts username, password, fullname, phone number and is_admin and
+         returns the created user or the error message''')
 async def user_signup(user: UserModel = Body(...)):
     # retrive the first record that matches with the email in request
     # if no records found, create new user
@@ -39,12 +44,12 @@ async def user_signup(user: UserModel = Body(...)):
     else:
         return user
 
-@router.post('/details')
-async def user_delete(user : JWTBearer = Depends(JWTBearer())):
+@router.get('/self',name="Get Self details", description="Gets the details for the calling user",)
+async def get_user_self(user : JWTBearer = Depends(JWTBearer())):
     user = decodeJWT(user)
     return await get_user(user.get('email'))
-
-@router.post('/delete/self')
+# NEED TO REWRITE
+@router.post('/delete/self', name="Delete self", description="Deletes the calling user from the database")
 async def user_delete_self(user : JWTBearer = Depends(JWTBearer())):
     user = decodeJWT(user)
     if await validate_user_jwt(user):
@@ -56,7 +61,7 @@ async def user_delete_self(user : JWTBearer = Depends(JWTBearer())):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='invalid credentials'
         )
-
+#NEED TO REWRITE TO GET PARAM FROM URL
 @router.post('/delete')
 async def user_delete(admin : JWTBearer = Depends(JWTBearer()), email: str = Body(...)):
     # here I'm writing user as admin because only admin will use this path

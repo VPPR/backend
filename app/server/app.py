@@ -31,5 +31,5 @@ app.include_router(
     tags=[
         'User'
     ],
-    prefix='/user'
+    prefix='/users'
 )
