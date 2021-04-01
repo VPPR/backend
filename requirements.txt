@@ -22,5 +22,5 @@ python-decouple==3.4
 requests==2.25.1
 starlette==0.13.6
 toml==0.10.2
-urllib3==1.26.3
+urllib3==1.26.4
 uvicorn==0.13.3
